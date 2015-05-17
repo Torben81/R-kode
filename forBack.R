@@ -1,8 +1,4 @@
-rm(list=ls())
-library(gRim)
-library(mlbench)
-data(Satellite)
-d <- Satellite[Satellite[,37]=="red soil",-37]
+d <- train[train[,37]=="vegetation stubble",-37]
 init <- function(d,al=.01){#d: dataframe al:level of significance
   #create a list vL where element i carries attributes to vertex i
   R <- cor(d)       #Correlation matrix
@@ -31,10 +27,12 @@ init <- function(d,al=.01){#d: dataframe al:level of significance
 updT <- function(x,a,m){#vertex a has gathered or lost a connection 
   #Here x is the information about vertex a
   R <- m$R
-  out <- (1:m$L)[x$out]
-  nei <- x$nei
+  out <<- (1:m$L)[x$out]
+  nei <<- x$nei
+  dout <<- dim(out)
+  dnei <<- dim(nei)
   r <- R[out,x$nei]
-  w <- x$w
+  w <<- x$w
   h <- R[out,x$nei]%*%x$w
   be <- x$w%*%R[x$nei,a]
   ssa <- 1-t.default(be)%*%R[x$nei,x$nei]%*%be
@@ -58,14 +56,15 @@ updT <- function(x,a,m){#vertex a has gathered or lost a connection
   }
   x$t[out] <- abs(beA/sdev)
   m$vL[[a]] <- x
-  m$eli[a,x$out] <- x$t[x$out]>m$crit
+  outok <- unlist(lapply(m$vL[x$out],function(x,a) x$t[a]>m$crit,a=a))
+  m$eli[a,x$out] <- m$eli[x$out,a] <- (x$t[x$out]>m$crit) & outok
   neiOK <- unlist(lapply(m$vL[x$nei],function(x,a) x$t[a]<m$crit,a=a))
   m$eli[a,x$nei] <- m$eli[x$nei,a] <- (x$t[x$nei]<m$crit) & neiOK
   m
 }
 rmE <- function(a,b,x,m){#updates if we disconnect a from b
   i <- match(b,x$nei)
-  dw <- dim(x$w)[1]
+  dw <<- dim(x$w)[1]
   if(is.null(dw)) print(x)
   if(dw<3) {
     w <- if(dw==2) matrix(1) else NULL
@@ -98,9 +97,9 @@ oneStep <- function(m){
   #either eligable for add=TRUE or remove.
   eli <- (1:m$L^2)[m$eli]
   no <- if(length(eli)==1) eli else sample(eli,1)
-  b <- floor((no-1)/m$L)+1
-  a <- no-(b-1)*m$L
-  add <- match(b,m$vL[[a]]$nei,0)==0
+  b <<- floor((no-1)/m$L)+1
+  a <<- no-(b-1)*m$L
+  add <<- match(b,m$vL[[a]]$nei,0)==0
   if(add) {
     m <- addE(a,b,m$vL[[a]],m)
     m <- addE(b,a,m$vL[[b]],m)
