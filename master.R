@@ -22,6 +22,9 @@ trainBC <- BC[samplesize,]
 testBC <- BC[-samplesize,]
 
 
-source("LDAQDA.R")
+source("LDAQDASatellite.R")
 source("HLM.R")
-source("RandomForest.R")
+source("HLMSatellite.R")
+source("HLMBCancer.R")
+source("glassoBCancer.R")
+source("ROCCurves.R")
