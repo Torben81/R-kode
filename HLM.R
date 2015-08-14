@@ -16,42 +16,50 @@ init <- function(d,al=.1){#d: dataframe al:level of significance
     #the inverse of R[nei,nei] needed to calculate t efficiently
   }
   vL <- lapply(1:L,oneV, R=R,N=N)  #creating a vertex list with info about each vertex
-  eli <- matrix(FALSE,L,L)#info about each edge. Is it eligable for
+  eli <- matrix(FALSE,L,L)  #info about each edge. Is it eligable for
   #adding or removal?
   crit <- qnorm(1-al/2)
   for(i in 1:L) eli[i,vL[[i]]$t>crit] <- TRUE
-  list(vL=vL,R=R,L=L,eli=eli,slut=FALSE,crit=crit,N=dim(d)[1])
-  #model-objekt.
+  list(vL=vL,R=R,L=L,eli=eli,slut=FALSE,crit=crit,N=dim(d)[1])  #model-objekt.
 }
 
 updT <- function(x,a,m){#vertex a has gathered or lost a connection 
   #Here x is the information about vertex a
   R <- m$R
-  out <- (1:m$L)[x$out]
-  nei <- x$nei
-  dout <- dim(out)
-  dnei <- dim(nei)
-  r <- R[out,x$nei]
-  w <- x$w
-  h <- R[out,x$nei]%*%x$w
-  be <- x$w%*%R[x$nei,a]
-  ssa <- 1-t.default(be)%*%R[x$nei,x$nei]%*%be
-  dw <- dim(x$w)[1]
-  vs <- x$w[1 + 0:(dw - 1) * (dw + 1)]
-  sdev <- sqrt(ssa/(m$N-1-length(x$nei))*vs)
-  x$t[x$nei] <- abs(be/sdev)
-  alA <- 1/(1-rowSums(h*R[out,x$nei]))
-  Routa <- (h%*%R[x$nei,a])
-  beA <- alA*(R[out,a]-Routa)[,1]
-  ss <- 1-R[a,x$nei]%*%be-
-    alA*((Routa[,1])^2+R[out,a]^2-2*(Routa[,1])*R[out,a])
-  sdev <- sqrt(ss/(m$N-2-length(x$nei))*alA)
-  x$t[out] <- abs(beA/sdev)
-  m$vL[[a]] <- x
-  outok <- unlist(lapply(m$vL[x$out],function(x,a) x$t[a]>m$crit,a=a))
-  m$eli[a,x$out] <- m$eli[x$out,a] <- (x$t[x$out]>m$crit) & outok
-  neiOK <- unlist(lapply(m$vL[x$nei],function(x,a) x$t[a]<m$crit,a=a))
-  m$eli[a,x$nei] <- m$eli[x$nei,a] <- (x$t[x$nei]<m$crit) & neiOK
+  if(is.null(x$w)){
+    print("yes")
+    print(a)
+    h <- R[a,-a]
+    x$t <- rep(0,m$L)
+    x$t[-a] <- abs(h*sqrt((m$N-2)/(1-h^2)))
+    x$out <- rep(TRUE,m$L)
+    x$out[a] <- FALSE
+    x$nei=NULL
+    m$eli[a,] <- m$eli[,a] <-FALSE
+    m$eli[a,x$t>m$crit] <- m$eli[x$t>m$crit,a] <- TRUE
+  } else {
+    out <<- (1:m$L)[x$out]
+    w <- x$w
+    h <- R[out,x$nei]%*%x$w
+    be <- x$w%*%R[x$nei,a]
+    ssa <- 1-t.default(be)%*%R[x$nei,x$nei]%*%be
+    dw <- dim(x$w)[1]
+    vs <- x$w[1 + 0:(dw - 1) * (dw + 1)]
+    sdev <- sqrt(ssa/(m$N-1-length(x$nei))*vs)
+    x$t[x$nei] <- abs(be/sdev)
+    alA <- 1/(1-rowSums(h*R[out,x$nei]))
+    Routa <- (h%*%R[x$nei,a])
+    beA <- alA*(R[out,a]-Routa)[,1]
+    ss <- 1-R[a,x$nei]%*%be-
+      alA*((Routa[,1])^2+R[out,a]^2-2*(Routa[,1])*R[out,a])
+    sdev <- sqrt(ss/(m$N-2-length(x$nei))*alA)
+    x$t[out] <- abs(beA/sdev)
+    m$vL[[a]] <- x
+    outok <- unlist(lapply(m$vL[x$out],function(x,a) x$t[a]>m$crit,a=a))
+    m$eli[a,x$out] <- m$eli[x$out,a] <- (x$t[x$out]>m$crit) & outok
+    neiOK <- unlist(lapply(m$vL[x$nei],function(x,a) x$t[a]<m$crit,a=a))
+    m$eli[a,x$nei] <- m$eli[x$nei,a] <- (x$t[x$nei]<m$crit) & neiOK
+  }
   m
 }
 
@@ -92,7 +100,7 @@ oneStep <- function(m){
   no <- if(length(eli)==1) eli else sample(eli,1)
   b <- floor((no-1)/m$L)+1
   a <- no-(b-1)*m$L
-  add <<- match(b,m$vL[[a]]$nei,0)==0
+  add <- match(b,m$vL[[a]]$nei,0)==0
   if(add) {
     m <- addE(a,b,m$vL[[a]],m)
     m <- addE(b,a,m$vL[[b]],m)

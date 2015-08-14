@@ -1,8 +1,6 @@
 #LDA
 ldaSat <- lda(classes~.,trainSat)
 ldaSat$prior
-summary(ldaSat)
-names(ldaSat$terms)
 predictLDA <- predict(ldaSat, testSat)
 confMatrixLDA <- table(testSat[,37], predictLDA$class)
 confMatrixLDA
@@ -18,8 +16,8 @@ c(ldaSatCorrect - 2*SEldaSat, ldaSatCorrect + 2*SEldaSat)
 
 sd(predictLDA$class)/sqrt(2000)
 
-ldahist(predictLDA$x[,1], g=testSat[,37])
-ldahist(predictLDA$x[,2], g=testSat[,37])
+#ldahist(predictLDA$x[,1], g=testSat[,37])
+#ldahist(predictLDA$x[,2], g=testSat[,37])
 
 #QDA    
 qdaSat <- qda(classes~., trainSat)

@@ -1,4 +1,4 @@
-#packages
+# Packages
 library(MASS)
 library(gRim)
 library(mlbench)
@@ -6,7 +6,7 @@ library(glasso)
 library(pROC)
 library(ggplot2)
 
-#Data 
+# Loading data 
 data(Satellite)
 set.seed(5)
 sampleSize <- sample(nrow(Satellite),4435)
@@ -21,7 +21,10 @@ samplesize <- sample(nrow(BC), 125)
 trainBC <- BC[samplesize,]
 testBC <- BC[-samplesize,]
 
+# Set working directory
+setwd("C:/Users/Torben/Dropbox/speciale/R-kode/git/Speciale")
 
+# Loading R-scripts
 source("LDAQDASatellite.R")
 source("HLM.R")
 source("HLMSatellite.R")
