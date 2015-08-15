@@ -1,4 +1,3 @@
-setwd("C:/Users/Torben/Dropbox/speciale/Rapport/images")
 # ROC curve glasso
 rocglasso <- roc(testBC[,1001], controlglasso, levels=c("control", "case"))
 
@@ -8,17 +7,15 @@ ggplot()+geom_path(aes(x=1-rocglasso$specificities, y=rocglasso$sensitivities, c
   scale_colour_discrete(name = "Model") + xlab("1 - Specificity") + ylab("Sensitivity") +
   theme(plot.background = element_rect(fill="transparent", color=NA), legend.background=element_rect(fill="transparent"))
 
-
-
-#ROC curvesHLM 
+# ROC curve HLM 
 rocBC <- roc(testBC[,1001], predControlBC, levels=c("control", "case"))
 rocBC$auc
 
-#HLMVotes
+# ROC curve HLMvotes
 rocBCVotes <-roc(testBC[,1001], votesObs, levels=c("control", "case"))
 rocBCVotes$auc
 
-#All in one plot
+# All in one plot
 pdf("ROCAll.pdf",7,5)
 ggplot()+geom_path(aes(x=1-rocglasso$specificities, y=rocglasso$sensitivities, colour="glasso"), size=0.8)+
   geom_path(aes(x=1-rocBC$specificities, y=rocBC$sensitivities, colour="HLM"), size=0.8) + 
