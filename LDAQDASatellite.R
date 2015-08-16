@@ -19,9 +19,9 @@ modelLDA
 
 # Predict the class using the estimated modelLDA, and calculating the confusion matrix.
 predictPCALDA <- predict(modelLDA)$class
-cofmatPCALDA <- table(Satellite[,37], predictPCALDA)
-diag(prop.table(cofmatPCALDA, 1))     # The proportion of correct predicted observations within each class.
-sum(diag(prop.table(cofmatPCALDA)))   # The proportion of correct predicted observations over all classes.
+cofMatPCALDA <- table(Satellite[,37], predictPCALDA)
+diag(prop.table(cofMatPCALDA, 1))     # The proportion of correct predicted observations within each class.
+sum(diag(prop.table(cofMatPCALDA)))   # The proportion of correct predicted observations over all classes.
 
 # This function estimate the LDA decision boundaries.
 ldaBoundary <- function(mu.l,mu.k,sigma,pi.l=0.5,pi.k=0.5){
@@ -48,7 +48,7 @@ sigmaSat <- lapply(split(as.data.frame(pcComp[,1:2]),Satellite[,37]),function(x)
 tableSat <- table(Satellite[,37])
 SigmaSat <- listSum(sigmaSat)/(sum(tableSat)-6)
 
-## Linaer Discriminant Analysis on the first two principal components.
+# Linaer Discriminant Analysis on the first two principal components.
 bound12 <- ldaBoundary(mu.l=musSat[[1]],mu.k=musSat[[2]],sigma=SigmaSat)
 bound13 <- ldaBoundary(mu.l=musSat[[1]],mu.k=musSat[[3]],sigma=SigmaSat)
 bound14 <- ldaBoundary(mu.l=musSat[[1]],mu.k=musSat[[4]],sigma=SigmaSat)
@@ -58,8 +58,7 @@ bound34 <- ldaBoundary(mu.l=musSat[[3]],mu.k=musSat[[4]],sigma=SigmaSat)
 bound46 <- ldaBoundary(mu.l=musSat[[4]],mu.k=musSat[[6]],sigma=SigmaSat)
 bound56 <- ldaBoundary(mu.l=musSat[[5]],mu.k=musSat[[6]],sigma=SigmaSat)
 
-
-## LDA -- boundary intersection points.
+# LDA -- boundary intersection points.
 x0Sat134 <- (bound34[1]-bound13[1])/(bound13[2]-bound34[2])
 y0Sat134 <- bound34[1] + bound34[2]*x0Sat134
 
@@ -103,31 +102,31 @@ ggplot()+geom_point(aes(pcComp1,pcComp2,colour=Satellite[,37]),shape=1)+
   theme(plot.background = element_rect(fill="transparent", color=NA), legend.background=element_rect(fill="transparent"))
 dev.off()
 
-# Applying LDA to the Satellite data. 
+# Applying LDA to the Satellite data including all 36 variabels. 
 ldaSat <- lda(classes~.,trainSat)
 ldaSat$prior
 predictLDA <- predict(ldaSat, testSat)
 confMatrixLDA <- table(testSat[,37], predictLDA$class)
 confMatrixLDA
 diag(prop.table(confMatrixLDA, 1))
-ldaSatCorrect <- sum(diag(prop.table(confMatrixLDA)))   # Total percent correct classified.
+ldaSatCorrect <- sum(diag(prop.table(confMatrixLDA))) 
 ldaSatCorrect
 
 # Standard error and confidence interval.
 SEldaSat <- sqrt((ldaSatCorrect*(1-ldaSatCorrect)/nrow(testSat)))
 c(ldaSatCorrect - 2*SEldaSat, ldaSatCorrect + 2*SEldaSat)
 
+# Histogram of the values of the discriminant functions for the samples from different classes.
 #ldahist(predictLDA$x[,1], g=testSat[,37])
 #ldahist(predictLDA$x[,2], g=testSat[,37])
 
-# Applying QDA to the Satellite data.     
+# Applying QDA to the Satellite data including all 36 variabels.     
 qdaSat <- qda(classes~., trainSat)
 qdaSat$prior
 predictQDA <- predict(qdaSat, testSat)
 confMatrixQDA <- table(testSat[,37], predictQDA$class)
 confMatrixQDA
 diag(prop.table(confMatrixQDA, 1))
-# total percent correct
 qdaSatCorrect <- sum(diag(prop.table(confMatrixQDA)))
 qdaSatCorrect
 
