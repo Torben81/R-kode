@@ -1,4 +1,4 @@
-controlBC <- trainBC[trainBC[,1001]=="control",-1001]
+controlBC <- trainBC[trainBC[,1001]=="case",-1001]
 initBC <- init(controlBC) 
 system.time(
   mBC <- step(initBC)
@@ -50,7 +50,7 @@ for(j in 1:R){
       mu[[t]] <- as.matrix(apply(d,2, mean))
       m0 <- init(d)
       modelsTypes[[t]] <- step(m0)
-      modelsEdgeL[[t]] <- edgeL(modelsTypes[[t]])
+      modelsEdgeL[[t]] <- edgeL(modelsTypes[[t]], d)
     }
     modelsColSplit[[i]] <- modelsTypes
     edgeLColSplit[[i]] <- modelsEdgeL

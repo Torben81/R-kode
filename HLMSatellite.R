@@ -7,7 +7,7 @@ system.time(
 )
 m$it
 #374 iterations in 0.28 seconds
-fitm <- cmod(edgeL(m),d)
+fitm <- cmod(edgeL(m,d),d)
 system.time(
   forwm <- forward(fitm,criterion="test",alpha=.01,type="unrestricted",search="headlong", steps=1)
 )
@@ -32,7 +32,7 @@ modelsEdgeL <- list()
 typesEdgeL <- list()
 for(t in types){
   for(i in 1:100){
-    modelsEdgeL[[i]] <- edgeL(typesModels[[t]][[i]])
+    modelsEdgeL[[i]] <- edgeL(typesModels[[t]][[i]], trainSat)
   }
   typesEdgeL[[t]] <- modelsEdgeL
 }

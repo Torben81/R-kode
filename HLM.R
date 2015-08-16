@@ -1,34 +1,32 @@
-init <- function(d,al=.1){#d: dataframe al:level of significance
-  #create a list vL where element i carries attributes to vertex i
-  R <- cor(d)       #Correlation matrix
-  L <- dim(R)[1]    #Number of variabels
-  N=dim(d)[1]       #Sampel size
-  oneV <- function(x,R,N){#one element in vL
+init <- function(d,al=.01){# d: dataframe al:level of significance.
+  # Create a list vL where element i carries attributes to vertex i.
+  R <- cor(d)       # Correlation matrix.
+  L <- dim(R)[1]    # Number of variabels.
+  N=dim(d)[1]       # Sampel size.
+  oneV <- function(x,R,N){# One element in vL.
     L <- dim(R)[1]
-    h <- R[x,-x]          #The row x from the correlation matrix without element x
+    h <- R[x,-x]         
     t <- rep(0,L)
     t[-x] <- abs(h*sqrt((N-2)/(1-h^2)))
     out <- rep(TRUE,L)    
     out[x] <- FALSE
     list(out=out,t=t,nei=NULL,w=NULL)
-    #attributes to vertex i: out is edges not neighbors to i; t[j] is
-    #t-score for removing (i,j); nei are the neighbors to i; w is
-    #the inverse of R[nei,nei] needed to calculate t efficiently
+    # Attributes to vertex i: out is edges not neighbors to i; t[j] is
+    # t-score for removing (i,j); nei are the neighbors to i; w is
+    # the inverse of R[nei,nei] needed to calculate t efficiently.
   }
-  vL <- lapply(1:L,oneV, R=R,N=N)  #creating a vertex list with info about each vertex
-  eli <- matrix(FALSE,L,L)  #info about each edge. Is it eligable for
-  #adding or removal?
+  vL <- lapply(1:L,oneV, R=R,N=N)  
+  eli <- matrix(FALSE,L,L)  # Info about each edge. Is it eligable for
+  # adding or removal?
   crit <- qnorm(1-al/2)
   for(i in 1:L) eli[i,vL[[i]]$t>crit] <- TRUE
-  list(vL=vL,R=R,L=L,eli=eli,slut=FALSE,crit=crit,N=dim(d)[1])  #model-objekt.
+  list(vL=vL,R=R,L=L,eli=eli,slut=FALSE,crit=crit,N=dim(d)[1])  # Model-objekt.
 }
 
-updT <- function(x,a,m){#vertex a has gathered or lost a connection 
-  #Here x is the information about vertex a
+updT <- function(x,a,m){# Vertex a has gathered or lost a connection.
+  # Here x is the attributes to vertex a, and m is the model-object.
   R <- m$R
   if(is.null(x$w)){
-    print("yes")
-    print(a)
     h <- R[a,-a]
     x$t <- rep(0,m$L)
     x$t[-a] <- abs(h*sqrt((m$N-2)/(1-h^2)))
@@ -63,7 +61,7 @@ updT <- function(x,a,m){#vertex a has gathered or lost a connection
   m
 }
 
-rmE <- function(a,b,x,m){#updates if we disconnect a from b
+rmE <- function(a,b,x,m){# Updates if we disconnect a from b.
   i <- match(b,x$nei)
   dw <- dim(x$w)[1]
   if(dw<3) {
@@ -77,7 +75,7 @@ rmE <- function(a,b,x,m){#updates if we disconnect a from b
   updT(x,a,m)
 }
 
-addE <- function(a,b,x,m){#updates if a is connected to b
+addE <- function(a,b,x,m){# Updates if a is connected to b.
   R <- m$R
   if(is.null(x$w)) w <- matrix(1) else {
     h <- x$w%*%R[x$nei,b]
@@ -94,8 +92,8 @@ addE <- function(a,b,x,m){#updates if a is connected to b
 }
 
 oneStep <- function(m){
-  #"random" choise of "signif" edge
-  #either eligable for add=TRUE or remove.
+  # "random" choise of "signif" edge
+  # either eligable for add=TRUE or remove.
   eli <- (1:m$L^2)[m$eli]
   no <- if(length(eli)==1) eli else sample(eli,1)
   b <- floor((no-1)/m$L)+1
@@ -113,7 +111,7 @@ oneStep <- function(m){
 
 step <- function(m,maxit=1000,al=.01){
   m$crit <- qnorm(1-al/2)
-  #forward or backward until noSignif or maxit edges
+  # Forward or backward until noSignif or maxit edges.
   for(i in 1:maxit){
     if(sum(m$eli)==0) break
     m <- oneStep(m)
@@ -121,7 +119,8 @@ step <- function(m,maxit=1000,al=.01){
   m$it <- i
   m
 }
-edgeL <- function(m){
+
+edgeL <- function(m, d=d){ # Create a list of the edges in a model and the vertexes with no neighbors.
   res <- list()
   for(i in 1:m$L){
     x <- m$vL[[i]]$nei
