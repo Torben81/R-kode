@@ -1,26 +1,27 @@
+# HLM (Headlong method)
 init <- function(d,al=.01){# d: dataframe al:level of significance.
   # Create a list vL where element i carries attributes to vertex i.
   R <- cor(d)       # Correlation matrix.
-  L <- dim(R)[1]    # Number of variabels.
+  p <- dim(R)[1]    # Number of variabels.
   N=dim(d)[1]       # Sampel size.
   oneV <- function(x,R,N){# One element in vL.
-    L <- dim(R)[1]
+    p <- dim(R)[1]
     h <- R[x,-x]         
-    t <- rep(0,L)
+    t <- rep(0,p)
     t[-x] <- abs(h*sqrt((N-2)/(1-h^2)))
-    out <- rep(TRUE,L)    
+    out <- rep(TRUE,p)    
     out[x] <- FALSE
     list(out=out,t=t,nei=NULL,w=NULL)
     # Attributes to vertex i: out is edges not neighbors to i; t[j] is
     # t-score for removing (i,j); nei are the neighbors to i; w is
     # the inverse of R[nei,nei] needed to calculate t efficiently.
   }
-  vL <- lapply(1:L,oneV, R=R,N=N)  
-  eli <- matrix(FALSE,L,L)  # Info about each edge. Is it eligable for
+  vL <- lapply(1:p,oneV, R=R,N=N)  
+  eli <- matrix(FALSE,p,p)  # Info about each edge. Is it eligable for
   # adding or removal?
   crit <- qnorm(1-al/2)
-  for(i in 1:L) eli[i,vL[[i]]$t>crit] <- TRUE
-  list(vL=vL,R=R,L=L,eli=eli,slut=FALSE,crit=crit,N=dim(d)[1])  # Model-objekt.
+  for(i in 1:p) eli[i,vL[[i]]$t>crit] <- TRUE
+  list(vL=vL,R=R,p=p,eli=eli,slut=FALSE,crit=crit,N=dim(d)[1])  # Model-objekt.
 }
 
 updT <- function(x,a,m){# Vertex a has gathered or lost a connection.
@@ -28,15 +29,15 @@ updT <- function(x,a,m){# Vertex a has gathered or lost a connection.
   R <- m$R
   if(is.null(x$w)){
     h <- R[a,-a]
-    x$t <- rep(0,m$L)
+    x$t <- rep(0,m$p)
     x$t[-a] <- abs(h*sqrt((m$N-2)/(1-h^2)))
-    x$out <- rep(TRUE,m$L)
+    x$out <- rep(TRUE,m$p)
     x$out[a] <- FALSE
     x$nei=NULL
     m$eli[a,] <- m$eli[,a] <-FALSE
     m$eli[a,x$t>m$crit] <- m$eli[x$t>m$crit,a] <- TRUE
   } else {
-    out <<- (1:m$L)[x$out]
+    out <<- (1:m$p)[x$out]
     w <- x$w
     h <- R[out,x$nei]%*%x$w
     be <- x$w%*%R[x$nei,a]
@@ -94,10 +95,10 @@ addE <- function(a,b,x,m){# Updates if a is connected to b.
 oneStep <- function(m){
   # "random" choise of "signif" edge
   # either eligable for add=TRUE or remove.
-  eli <- (1:m$L^2)[m$eli]
+  eli <- (1:m$p^2)[m$eli]
   no <- if(length(eli)==1) eli else sample(eli,1)
-  b <- floor((no-1)/m$L)+1
-  a <- no-(b-1)*m$L
+  b <- floor((no-1)/m$p)+1
+  a <- no-(b-1)*m$p
   add <- match(b,m$vL[[a]]$nei,0)==0
   if(add) {
     m <- addE(a,b,m$vL[[a]],m)
@@ -122,7 +123,7 @@ step <- function(m,maxit=1000,al=.01){
 
 edgeL <- function(m, d=d){ # Create a list of the edges in a model and the vertexes with no neighbors.
   res <- list()
-  for(i in 1:m$L){
+  for(i in 1:m$p){
     x <- m$vL[[i]]$nei
     if(is.null(x)){
       res <- c(res,list(colnames(d)[i]))

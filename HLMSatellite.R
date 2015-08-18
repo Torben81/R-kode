@@ -1,4 +1,4 @@
-# In the follwing we make an example of model selection with the HLM compared with gRim
+# In the follwing we make an example of model selection with the HLM compared with gRim.
 d <- trainSat[trainSat[,37]=="red soil",-37]
 m0 <- init(d)
 set.seed(5)
@@ -12,10 +12,10 @@ system.time(
   forwm <- forward(fitm,criterion="test",alpha=.01,type="unrestricted",search="headlong", steps=1)
 )
 
-# In the following we make Classification on the Satellite data using the HLM 
-types <- levels(Satellite$classes)
+# In the following we make Classification on the Satellite data using the HLM.
+types <- levels(Satellite$classes) # Types of classes.
 
-models <- list()
+models <- list()  
 typesModels <- list()
 system.time(
 for(t in types){
@@ -60,7 +60,6 @@ system.time(
       d <- trainSat[trainSat$classes==t, -37]
       mu <- as.matrix(apply(d,2,mean))
       for (i in 1:100){
-        #fitm <- cmod(typesEdgeL[[t]][[i]],d)
         J <- fitModelsTypes[[t]][[i]]$fitinfo$K
         detJ <- fitModelsTypes[[t]][[i]]$fitinfo$detK
         h <- J%*%mu
@@ -106,6 +105,6 @@ confMatrixHLM
 diag(prop.table(confMatrixHLM, 1))
 accSatHLm <- sum(diag(prop.table(confMatrixHLM)))
 
-#Standard error
+#Standard error and confidence interval.
 SESatHLM <- sqrt((accSatHLm*(1-accSatHLm)/nrow(testSat)))
 c(accSatHLm - 2*SESatHLM, accSatHLm + 2*SESatHLM)
