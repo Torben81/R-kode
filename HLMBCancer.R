@@ -28,11 +28,10 @@ for(i in 1:split){  # Training and test sets both contaning the same parts of va
 R <- 100   # To obtain so sort of Random forest the HLM is repited R times on the training data.
 typesBC <- levels(trainBC$code)
 muSplitBC <- list()
-muTrainBC <- list()
+muSplitTrainBC <- list()
 fitmBC <- list()
 fitmTypesBC <- list()
 fitmColSplitBC <- list()
-
 for(i in 1:split){  # Performing model selection R times on every part of variabels for each class.
   for(t in typesBC){
     d <- trainColSplit[[i]][trainColSplit[[i]]$classTrain==t,-(colSize+1)]
@@ -46,15 +45,13 @@ for(i in 1:split){  # Performing model selection R times on every part of variab
     fitmTypesBC[[t]] <- fitmBC
   }
   fitmColSplitBC[[i]] <- fitmTypesBC
-  muTrainBC[[i]] <- muSplitBC
+  muSplitTrainBC[[i]] <- muSplitBC
   cat(i,"\n")
 }
 
 densModelBC <- c()
-#names(dens) <- c("case", "control")
 densTypesBC <- list()
 densSplitBC <- list()
-#densModels <- list()
 densTestBC <- list()
 for(ii in 1:nrow(testBC)){  
   for(i in 1:split){
@@ -63,7 +60,7 @@ for(ii in 1:nrow(testBC)){
       for(j in 1:R){
         J <- fitmColSplitBC[[i]][[t]][[j]]$fitinfo$K
         detJ <- fitmColSplitBC[[i]][[t]][[j]]$fitinfo$detK
-        mu <- muTrainBC[[i]][[t]]
+        mu <- muSplitTrainBC[[i]][[t]]
         h <- J%*%mu
         densModelBC[j] <- sqrt(detJ)*exp(t.default(h)%*%x - 0.5*t.default(x)%*%J%*%x -0.5*t.default(h)%*%mu)
       }
@@ -79,11 +76,7 @@ densControl <-
 densCase <- 
 densSplitCase <- 
 densSplitControl <- 
-#avDensCaseBC <- rep(0,125)
-#avDensControlBC <- rep(0,125)
 votesTestBC <- c()
-#predCaseBC <- rep(0,125)
-#predControlBC <- rep(0,125)
 postTestBC <- list()
 for(ii in 1:125){
   votes <- 0
@@ -112,10 +105,11 @@ for(ii in 1:nrow(testBC)){
 }
 voteClass <- factor(voteClass,labels=typesBC)
 
-sumCaseControl <- c()
+sumPostTestBC <- c()
 for(ii in 1:nrow(testBC)){
-  sumCaseControl[ii] <- do.call(sum, postTestBC[ii])
+  sumPostTestBC[ii] <- sum(postTestBC[[ii]])
 }
+sumPostTestBC
 
 predBC <- c()
 for(ii in 1:nrow(testBC)){

@@ -1,65 +1,55 @@
-types <- levels(trainBC$code)
-muBC <- list()
-glassotrainBC <- list()
-for(t in types){
+typesBC <- levels(BC$code)
+muTrainBC <- list()
+glassoTrainBC <- list()
+for(t in typesBC){
   d <- trainBC[trainBC[,1001]==t,-1001]
-  muBC[[t]] <- apply(d,2,mean)
-  covtrainBC <- cor(d)
-  system.time(glassotrainBC[[t]] <- glasso(covtrainBC, rho=0.4))
+  muTrainBC[[t]] <- apply(d,2,mean)
+  covTrainBC <- cor(d)
+  glassoTrainBC[[t]] <- glasso(covTrainBC, rho=0.4)
+  cat(t,"\n")
 }
-glassotrainBC[[1]]
-covtrainBC[1:10,1:10] 
-names(glassotrainBC[[1]])
 
-densTypesTestBC <- c(0,0)
-names(densTypesTestBC) <- types
-densTestBC <- list()
+densGlassoBC <- c()
+densGlassoTestBC <- list()
 for(ii in 1:nrow(testBC)){
-  x <- t(as.matrix(testBC[ii,-1001]))
-  for(t in types){
-    mu <- muBC[[t]]
-    J <- glassotrainBC[[t]]$wi
-    detJ <- det(glassotrainBC[[t]]$wi)
+  x <- t.default(as.matrix(testBC[ii,-1001]))
+  for(t in typesBC){
+    mu <- muTrainBC[[t]]
+    J <- glassoTrainBC[[t]]$wi
+    detJ <- det(glassoTrainBC[[t]]$wi)
     h <- J%*%mu
-    densTypesTestBC[t] <- sqrt(detJ)*exp(t(h)%*%x - 0.5*t(x)%*%J%*%x -0.5*t(h)%*%mu)
+    densGlassoBC[t] <- sqrt(detJ)*exp(t.default(h)%*%x - 0.5*t.default(x)%*%J%*%x -0.5*t.default(h)%*%mu)
   }
-  densTestBC[[ii]] <- densTypesTestBC
-}
-densTestBC[[1]][1]/sum(densTestBC[[1]])
-testBC[51,1001]
-classes <- testBC[,1001]
-
-caseglasso <- rep(0,125)
-controlglasso <- rep(0,125)
-classglasso <- list()
-for(ii in 1:nrow(testBC)){
-  caseglasso[ii] <- densTestBC[[ii]][1]/sum(densTestBC[[ii]])
-  controlglasso[ii] <- densTestBC[[ii]][2]/sum(densTestBC[[ii]])
-  classglasso[[ii]] <- c(caseglasso[ii], controlglasso[ii])
+  densGlassoTestBC[[ii]] <- densGlassoBC
+  cat(ii,"\n")
 }
 
-sumTestBC <- rep(0,nrow(testBC))
+postTypesGlasso <- c()
+postGlasso <- list()
 for(ii in 1:nrow(testBC)){
-  sumDenBC <- 0
-  for(t in types){
-    sumDenBC <- sumDenBC + unname(densTestBC[[ii]][t]/sum(densTestBC[[ii]]))
+  for(t in typesBC){
+  postTypesGlasso[t] <- densGlassoTestBC[[ii]][t]/sum(densGlassoTestBC[[ii]])
   }
-  sumTestBC[ii] <- sumDenBC
+  postGlasso[[ii]] <- postTypesGlasso
 }
-sumDenBC
-sumTestBC
 
-predglassoBC <- rep(0,nrow(testBC))
+sumPostGlasso <- c()
 for(ii in 1:nrow(testBC)){
-  predglassoBC[ii] <- which(classglasso[[ii]]==max(classglasso[[ii]]))
+    sumPostGlasso[ii] <- sum(postGlasso[[ii]])
 }
-predglassoBC <- factor(predglassoBC, labels=types)
+sumPostGlasso
+
+predglassoBC <- c()
+for(ii in 1:nrow(testBC)){
+  predglassoBC[ii] <- which(postGlasso[[ii]]==max(postGlasso[[ii]]))
+}
+predglassoBC <- factor(predglassoBC, labels=typesBC)
 
 glassoconfM <- table(testBC[,1001], predglassoBC)
 glassoconfM
-(13+85)/125
 diag(prop.table(glassoconfM, 1))
 accGlasso <- sum(diag(prop.table(glassoconfM)))
+accGlasso
 
 #Standard error
 SEglasso <- sqrt((accGlasso*(1-accGlasso)/nrow(testBC)))

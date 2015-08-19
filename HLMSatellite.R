@@ -36,7 +36,7 @@ for(t in typesSat){  # Performing model selection R times for each class using t
 }
 
 # Estimating the conditional density of every observation in the test set given each class.
-densModelSat <- v()
+densModelSat <- c()
 densTypesSat <- list()
 densTestSat <- list()
 for(ii in 1:nrow(testSat)){
@@ -66,14 +66,14 @@ for(ii in 1:nrow(testSat)){
 }
 
 # Verifying that the posterior densities for each observation summarise to one. 
-sumPostSat <- v()
+sumPostSat <- c()
 for(ii in 1:nrow(testSat)){
   sumPostSat[ii] <- do.call(sum,postTestSat[[ii]])
 }
 sumPostSat
 
 # The estimated classification of the test set when using the HLM. 
-predTest <- v()
+predTest <- c()
 for(ii in 1:nrow(testSat)){
   predTest[ii] <- which(postTestSat[[ii]]==do.call(max,postTestSat[[ii]]))
 }
