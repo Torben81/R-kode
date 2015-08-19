@@ -49,6 +49,7 @@ for(i in 1:split){  # Performing model selection R times on every part of variab
   cat(i,"\n")
 }
 
+# Estimating the conditional density of every observation in the test set given the fitted model above.
 densModelBC <- c()
 densTypesBC <- list()
 densSplitBC <- list()
@@ -72,6 +73,8 @@ for(ii in 1:nrow(testBC)){
   cat(ii,"\n")
 }
 
+# Estimating the posterior densities where the probablity of belonging 
+# to one of the six classes is equal.
 densControl <- 
 densCase <- 
 densSplitCase <- 
