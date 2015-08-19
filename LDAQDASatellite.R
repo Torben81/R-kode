@@ -31,6 +31,7 @@ ldaBoundary <- function(mu.l,mu.k,sigma,pi.l=0.5,pi.k=0.5){
   c(intercept=b/A[2],slope=-A[1]/A[2])
 }
 
+# This function estimate the sum of all the elements in a list. 
 listSum <- function(x){
   stopifnot(is.list(x))
   if(length(x)==2){
@@ -40,15 +41,17 @@ listSum <- function(x){
   else listSum(c(list(x[[1]]+x[[2]]),x[-(1:2)]))
 }
 
+# A list contaning the empirical mean for each class.
 musSat <- lapply(split(as.data.frame(pcComp[,1:2]),Satellite[,37]),colMeans)
 
+# A list containing the empirical covariance matrix for each class.
 sigmaSat <- lapply(split(as.data.frame(pcComp[,1:2]),Satellite[,37]),function(x)
   listSum(lapply(split(sweep(x,2,colMeans(x)),1:nrow(x)),function(y) as.vector(unlist(y))%*%t(as.vector(unlist(y))))))
 
-tableSat <- table(Satellite[,37])
-SigmaSat <- listSum(sigmaSat)/(sum(tableSat)-6)
+tableSat <- table(Satellite[,37])  # Number of observations within each class.
+SigmaSat <- listSum(sigmaSat)/(sum(tableSat)-6)  # The unbiased empirical covariance matrix.
 
-# Linaer Discriminant Analysis on the first two principal components.
+# Linaer Discriminant Analysis on the first two principal components for class k and l.
 bound12 <- ldaBoundary(mu.l=musSat[[1]],mu.k=musSat[[2]],sigma=SigmaSat)
 bound13 <- ldaBoundary(mu.l=musSat[[1]],mu.k=musSat[[3]],sigma=SigmaSat)
 bound14 <- ldaBoundary(mu.l=musSat[[1]],mu.k=musSat[[4]],sigma=SigmaSat)

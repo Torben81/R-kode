@@ -6,104 +6,86 @@ system.time(
   m <- step(m0)
 )
 m$it
-#374 iterations in 0.28 seconds
+# 374 iterations in 0.28 seconds
 fitm <- cmod(edgeL(m,d),d)
 system.time(
   forwm <- forward(fitm,criterion="test",alpha=.01,type="unrestricted",search="headlong", steps=1)
 )
 
 # In the following we make Classification on the Satellite data using the HLM.
-types <- levels(Satellite$classes) # Types of classes.
+typesSat <- levels(Satellite$classes) # Types of classes.
 
-models <- list()  
-typesModels <- list()
-system.time(
-for(t in types){
+# To obtain some sort of Random Forrest we apply the HLM R times on the training data.
+R <- 100
+
+fitmSat <- list()
+fitModelsSat <- list()
+muTrainSat <- list()
+for(t in typesSat){  # Performing model selection R times for each class using the HLM.
   d <- trainSat[trainSat$classes==t, -37]
   m0 <- init(d)
-  for(i in 1:100){
-    models[[i]] <- step(m0)
+  for(i in 1:R){
+    mSat <- step(m0)
+    mSatEdgeL <- edgeL(mSat, d)  # Extracting the edges of a model.
+    fitmSat[[i]] <- cmod(mSatEdgeL,d)  # Fitting the model.
     cat(i,"\n")
   }
-  typesModels[[t]] <- models
-})
-
-modelsEdgeL <- list()
-typesEdgeL <- list()
-for(t in types){
-  for(i in 1:100){
-    modelsEdgeL[[i]] <- edgeL(typesModels[[t]][[i]], trainSat)
-  }
-  typesEdgeL[[t]] <- modelsEdgeL
+  fitModelsSat[[t]] <- fitmSat
+  mu <- as.matrix(apply(d,2,mean))  # The empirical mean of the variabels for class t.
+  muTrainSat[[t]] <- mu
 }
 
-fitModels <- list()
-fitModelsTypes <- list()
-system.time(
-  for(t in types){
-    d <- trainSat[trainSat$classes==t, -37]
-    for(i in 1:100){
-      fitModels[[i]] <- cmod(typesEdgeL[[t]][[i]],d)
-      cat(i,"\n")
+# Estimating the conditional density of every observation in the test set given each class.
+densModelSat <- v()
+densTypesSat <- list()
+densTestSat <- list()
+for(ii in 1:nrow(testSat)){
+  x <- t.default(as.matrix(testSat[ii,-37])) 
+  for(t in typesSat){
+    for (i in 1:R){
+      J <- fitModelsSat[[t]][[i]]$fitinfo$K
+      detJ <- fitModelsSat[[t]][[i]]$fitinfo$detK
+      h <- J%*%muTrainSat[[t]]
+      densModelSat[i] <- sqrt(detJ)*exp(t.default(h)%*%x - 0.5*t.default(x)%*%J%*%x -0.5*t.default(h)%*%muTrainSat[[t]])
     }
-    fitModelsTypes[[t]] <- fitModels
+    densTypesSat[[t]] <- sum(densModelSat)/R
   }
-)
-
-modelsDensity <- rep(0,100)
-typesDensity <- list()
-testDensity <- list()
-system.time(
-  for(ii in 1:nrow(testSat)){
-    x <- t(as.matrix(testSat[ii,-37]))
-    for(t in types){
-      d <- trainSat[trainSat$classes==t, -37]
-      mu <- as.matrix(apply(d,2,mean))
-      for (i in 1:100){
-        J <- fitModelsTypes[[t]][[i]]$fitinfo$K
-        detJ <- fitModelsTypes[[t]][[i]]$fitinfo$detK
-        h <- J%*%mu
-        modelsDensity[i] <- sqrt(detJ)*exp(t(h)%*%x - 0.5*t(x)%*%J%*%x -0.5*t(h)%*%mu)
-      }
-      typesDensity[[t]] <- modelsDensity
-    }
-    testDensity[[ii]] <- typesDensity
-    cat(ii,"\n")
-  }
-)
-
-avDenTypes <- rep(0,6)
-names(avDenTypes) <- types
-testTypes <- list()
-for(ii in 1:nrow(testSat)){
-  for(t in types){
-    avDenTypes[t] <- sum(testDensity[[ii]][[t]])/100
-  }
-  testTypes[[ii]] <- avDenTypes
+  densTestSat[[ii]] <- densTypesSat
+  cat(ii,"\n")
 }
 
-sumTest <- rep(0,nrow(testSat))
+# Estimating the posterior densities where the probablity of belonging 
+# to one of the six classes is equal.
+postTypesSat <- list()
+postTestSat <- list()
 for(ii in 1:nrow(testSat)){
-  sumDensity <- 0
-  for(t in 1:6){
-    sumDensity <- sumDensity + unname(testTypes[[ii]][t]/sum(testTypes[[ii]]))
-    print(sumDensity)
+  for(t in typesSat){
+    postTypesSat[[t]] <- densTestSat[[ii]][[t]]/do.call(sum,densTestSat[[ii]])
   }
-  sumTest[ii] <- sumDensity
+  postTestSat[[ii]] <- postTypesSat
 }
-sumDensity
-sumTest
 
-predTest <- rep(0,nrow(testSat))
+# Verifying that the posterior densities for each observation summarise to one. 
+sumPostSat <- v()
 for(ii in 1:nrow(testSat)){
-  predTest[ii] <- which(testTypes[[ii]]/sum(testTypes[[ii]])==max(testTypes[[ii]]/sum(testTypes[[ii]])))
+  sumPostSat[ii] <- do.call(sum,postTestSat[[ii]])
 }
-predTest <- factor(predTest, label=types)
+sumPostSat
 
+# The estimated classification of the test set when using the HLM. 
+predTest <- v()
+for(ii in 1:nrow(testSat)){
+  predTest[ii] <- which(postTestSat[[ii]]==do.call(max,postTestSat[[ii]]))
+}
+predTest <- factor(predTest, label=typesSat)
+
+# The following results may be slightly different than the results in the project 
+# due to the randomness in the HLM.
 confMatrixHLM <- table(testSat[,37],predTest) #HLM (Headlong method)
 confMatrixHLM
 diag(prop.table(confMatrixHLM, 1))
 accSatHLm <- sum(diag(prop.table(confMatrixHLM)))
+accSatHLm
 
 #Standard error and confidence interval.
 SESatHLM <- sqrt((accSatHLm*(1-accSatHLm)/nrow(testSat)))

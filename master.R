@@ -25,9 +25,11 @@ testBC <- BC[-samplesize,]
 setwd("C:/Users/Torben/Dropbox/speciale/R-kode/git/Speciale")
 
 # Loading R-scripts
+Sys.time() -> start
 source("LDAQDASatellite.R")
 source("HLM.R")
 source("HLMSatellite.R")
 source("HLMBCancer.R")
 source("glassoBCancer.R")
 source("ROCCurves.R")
+Sys.time()-start

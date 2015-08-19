@@ -20,130 +20,115 @@ classTest <- testBC[,1001]
 
 trainColSplit <- list()
 testColSplit <- list()
-for(i in 1:split){
+for(i in 1:split){  # Training and test sets both contaning the same parts of variabels.
   trainColSplit[[i]] <- cbind(trainBC[,trainSplit[[i]]],classTrain)
   testColSplit[[i]] <- cbind(testBC[,testSplit[[i]]],classTest)
 }
 
 R <- 100   # To obtain so sort of Random forest the HLM is repited R times on the training data.
-types <- levels(trainBC$code)
-mu <- list()
-muSplit <- list()
-dataInfo <- list()
-modelsTypes <- list()
-modelsColSplit <- list()
-modelsEdgeL <- list()
-edgeLColSplit <- list()
-for(j in 1:R){
-  for(i in 1:split){
-    for(t in types){
-      d <- trainColSplit[[i]][trainColSplit[[i]]$classTrain==t,-(colSize+1)]
-      mu[[t]] <- as.matrix(apply(d,2, mean))
+typesBC <- levels(trainBC$code)
+muSplitBC <- list()
+muTrainBC <- list()
+fitmBC <- list()
+fitmTypesBC <- list()
+fitmColSplitBC <- list()
+
+for(i in 1:split){  # Performing model selection R times on every part of variabels for each class.
+  for(t in typesBC){
+    d <- trainColSplit[[i]][trainColSplit[[i]]$classTrain==t,-(colSize+1)]
+    muSplitBC[[t]] <- as.matrix(apply(d,2, mean)) # Emperical mean of a part of variabels.
+    for(j in 1:R){
       m0 <- init(d)
-      modelsTypes[[t]] <- step(m0)
-      modelsEdgeL[[t]] <- edgeL(modelsTypes[[t]], d)
+      mBC <- step(m0)
+      mBCEdgeL <- edgeL(mBC, d)  # Extrating the edges from the model.
+      fitmBC[[j]] <- cmod(mBCEdgeL,d)  # Fitting the model.
     }
-    modelsColSplit[[i]] <- modelsTypes
-    edgeLColSplit[[i]] <- modelsEdgeL
-    muSplit[[i]] <- mu
+    fitmTypesBC[[t]] <- fitmBC
   }
-  dataInfo[[j]] <- list(modelsColSplit, edgeLColSplit, muSplit)
-  cat(j,"\n")
+  fitmColSplitBC[[i]] <- fitmTypesBC
+  muTrainBC[[i]] <- muSplitBC
+  cat(i,"\n")
 }
 
-fitmTypes <- list()
-fitmColSplit <- list()
-fitmodels <- list()
-for(j in 1:R){
+densModelBC <- c()
+#names(dens) <- c("case", "control")
+densTypesBC <- list()
+densSplitBC <- list()
+#densModels <- list()
+densTestBC <- list()
+for(ii in 1:nrow(testBC)){  
   for(i in 1:split){
-    for(t in types){
-      d <- trainColSplit[[i]][trainColSplit[[i]]$classTrain==t,-(colSize+1)]
-      fitmTypes[[t]] <- cmod(dataInfo[[j]][[2]][[i]][[t]],d)
-    }
-    fitmColSplit[[i]] <- fitmTypes
-  }
-  fitmodels[[j]] <- fitmColSplit
-  cat(j,"\n")
-}
-
-dens <- c(0,0)
-names(dens) <- c("case", "control")
-densCol <- list()
-densModels <- list()
-densObs <- list()
-for(ii in 1:nrow(testBC)){
-  for(j in 1:R){
-    for(i in 1:split){
-      x <- t(as.matrix(testColSplit[[i]][ii,-(colSize+1)]))
-      for(t in types){
-        J <- fitmodels[[j]][[i]][[t]]$fitinfo$K
-        detJ <- fitmodels[[j]][[i]][[t]]$fitinfo$detK
-        mu <- dataInfo[[j]][[3]][[i]][[t]]
+    x <- t.default(as.matrix(testColSplit[[i]][ii,-(colSize+1)]))
+    for(t in typesBC){
+      for(j in 1:R){
+        J <- fitmColSplitBC[[i]][[t]][[j]]$fitinfo$K
+        detJ <- fitmColSplitBC[[i]][[t]][[j]]$fitinfo$detK
+        mu <- muTrainBC[[i]][[t]]
         h <- J%*%mu
-        dens[t] <- sqrt(detJ)*exp(t(h)%*%x - 0.5*t(x)%*%J%*%x -0.5*t(h)%*%mu)
+        densModelBC[j] <- sqrt(detJ)*exp(t.default(h)%*%x - 0.5*t.default(x)%*%J%*%x -0.5*t.default(h)%*%mu)
       }
-      densCol[[i]] <- dens
+      densTypesBC[[t]] <- densModelBC
     }
-    densModels[[j]] <- densCol
+    densSplitBC[[i]] <- densTypesBC
   }
-  densObs[[ii]] <- densModels
+  densTestBC[[ii]] <- densSplitBC
   cat(ii,"\n")
 }
 
-densSplitControl <- rep(0,split)
-densSplitCase <- rep(0,split)
-avSplitControl <- rep(0,R)
-avSplitCase <- rep(0,R)
-avDensCaseBC <- rep(0,125)
-avDensControlBC <- rep(0,125)
-votesObs <- rep(0,125)
-predCaseBC <- rep(0,125)
-predControlBC <- rep(0,125)
-predCaseControlBC <- list()
-
+densControl <- 
+densCase <- 
+densSplitCase <- 
+densSplitControl <- 
+#avDensCaseBC <- rep(0,125)
+#avDensControlBC <- rep(0,125)
+votesTestBC <- c()
+#predCaseBC <- rep(0,125)
+#predControlBC <- rep(0,125)
+postTestBC <- list()
 for(ii in 1:125){
   votes <- 0
-  for(j in 1:R){
-    for(i in 1:split){
-      densSplitCase[i] <- densObs[[ii]][[j]][[i]][1]
-      densSplitControl[i] <- densObs[[ii]][[j]][[i]][2]
-      votes <- votes + 1*(densSplitCase[i] > densSplitControl[i])
+  for(i in 1:split){
+    for(j in 1:R){
+      densCase[j] <- densTestBC[[ii]][[i]][[1]][j]
+      densControl[j] <- densTestBC[[ii]][[i]][[2]][j]
+      votes <- votes + 1*(densCase[j] > densControl[j])
     }
-    avSplitCase[j] <- sum(densSplitCase)
-    avSplitControl[j] <- sum(densSplitControl)
+    densSplitCase[i] <- sum(densCase)/R
+    densSplitControl[i] <- sum(densControl)/R
   }
-  votesObs[ii] <- votes
-  avDensCaseBC[ii] <- sum(avSplitCase)/R
-  avDensControlBC[ii] <- sum(avSplitControl)/R
-  predCaseBC[ii] <- avDensCaseBC[ii]/sum(avDensCaseBC[ii],avDensControlBC[ii])
-  predControlBC[ii] <- avDensControlBC[ii]/sum(avDensCaseBC[ii],avDensControlBC[ii])
-  predCaseControlBC[[ii]] <- c(predCaseBC[ii],predControlBC[ii])
+  votesTestBC[ii] <- votes
+  densCaseBC <- sum(densSplitCase)
+  densControlBC <- sum(densSplitControl)
+  postCaseBC <- densCaseBC/sum(densCaseBC,densControlBC)
+  postControlBC <- densControlBC/sum(densCaseBC,densControlBC)
+  postTestBC[[ii]] <- c(postCaseBC,postControlBC)
 }
 
-voteClass <- rep(0,125)
+voteClass <- c()
 for(ii in 1:nrow(testBC)){
-  if(votesObs[ii]>2500){
+  if(votesTestBC[ii]>2500){
     voteClass[ii] <- 1
   } else voteClass[ii] <- 2
 }
-voteClass <- factor(voteClass,labels=types)
+voteClass <- factor(voteClass,labels=typesBC)
 
-sumCaseControl <- rep(0,125)
+sumCaseControl <- c()
 for(ii in 1:nrow(testBC)){
-  sumCaseControl[ii] <- sum(predCaseBC[ii],predControlBC[ii])
+  sumCaseControl[ii] <- do.call(sum, postTestBC[ii])
 }
 
-predBC <- rep(0,nrow(testBC))
+predBC <- c()
 for(ii in 1:nrow(testBC)){
-  predBC[ii] <- which(predCaseControlBC[[ii]]==max(predCaseControlBC[[ii]]))
+  predBC[ii] <- which(postTestBC[[ii]]==max(postTestBC[[ii]]))
 }
-predBC <- factor(predBC, label=types)
+predBC <- factor(predBC, label=typesBC)
 
 # Confusion matrix, sensitivity, specificity and accuracy of the HLM classifier.
 confMatrixBC <- table(testBC[,1001], predBC)
 confMatrixBC
 diag(prop.table(confMatrixBC, 1))
 accBCHLM <- sum(diag(prop.table(confMatrixBC)))
+accBCHLM
 
 # Standard error #HLM and confidence interval.
 SEBCHLM <- sqrt((accBCHLM*(1-accBCHLM)/nrow(testBC)))
@@ -154,6 +139,7 @@ confMatrixBCVotes <- table(testBC[,1001], voteClass)
 confMatrixBCVotes
 diag(prop.table(confMatrixBCVotes,1))
 accBCHLMVotes <- sum(diag(prop.table(confMatrixBCVotes)))
+accBCHLMVotes
 
 #Standard error and confidence interval.
 SEBCHLMVotes <- sqrt((accBCHLMVotes*(1-accBCHLMVotes)/nrow(testBC)))
