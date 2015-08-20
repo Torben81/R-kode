@@ -24,7 +24,7 @@ testBC <- BC[-samplesize,]
 # Set working directory
 setwd("C:/Users/Torben/Dropbox/speciale/R-kode/git/Speciale")
 
-# Loading R-scripts
+# Loading R-scripts. Takes about 30 minutes.
 Sys.time() -> start
 source("LDAQDASatellite.R")
 source("HLM.R")
