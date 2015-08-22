@@ -9,17 +9,17 @@ library(ggplot2)
 # Loading data 
 data(Satellite)
 set.seed(5)
-sampleSize <- sample(nrow(Satellite),4435)
-trainSat <- Satellite[sampleSize,]
-testSat <- Satellite[-sampleSize,]
+sampleSizeSat <- sample(nrow(Satellite),4435)
+trainSat <- Satellite[sampleSizeSat,]
+testSat <- Satellite[-sampleSizeSat,]
 
 data(breastcancer)
 BC <- breastcancer
 BC <- BC[sort(rownames(BC)),]
 set.seed(5)
-samplesize <- sample(nrow(BC), 125)
-trainBC <- BC[samplesize,]
-testBC <- BC[-samplesize,]
+sampleSizeBC <- sample(nrow(BC), 125)
+trainBC <- BC[sampleSizeBC,]
+testBC <- BC[-sampleSizeBC,]
 
 # Set working directory
 setwd("C:/Users/Torben/Dropbox/speciale/R-kode/git/Speciale")
