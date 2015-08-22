@@ -54,7 +54,39 @@ ggplot()+geom_path(aes(x=1-rocQDARS$specificities, y=rocQDARS$sensitivities, col
   theme(plot.background = element_rect(fill="transparent", color=NA), legend.background=element_rect(fill="transparent"))
 dev.off()
 
-# ROC curve for the HLM applyed on the Satellite data.
+# ROC curves for the HLM applied on Satellite data.
+postRS <- as.numeric(lapply(postTestSat,"[[",1))  # Posterior probabilties for Red soil class.
+rocHLMRS <- roc(testSat[,37]=="red soil", postRS)
+rocHLMRS
+postCC <- as.numeric(lapply(postTestSat,"[[",2)) 
+rocHLMCC <- roc(testSat[,37]=="cotton crop", postCC)
+rocHLMCC$auc
+postGS <- as.numeric(lapply(postTestSat,"[[",3)) 
+rocHLMGS <- roc(testSat[,37]=="grey soil", postGS)
+rocHLMGS$auc
+postDGS <- as.numeric(lapply(postTestSat,"[[",4)) 
+rocHLMDGS <- roc(testSat[,37]=="damp grey soil", postDGS)
+rocHLMDGS$auc
+postVS <- as.numeric(lapply(postTestSat,"[[",5)) 
+rocHLMVS <- roc(testSat[,37]=="vegetation stubble", postVS)
+rocHLMVS$auc
+postVDGS <- as.numeric(lapply(postTestSat,"[[",6)) 
+rocHLMVDGS <- roc(testSat[,37]=="very damp grey soil", postVDGS)
+rocHLMVDGS$auc
+
+# All ROC curves for HLM applied on Satellite data in one plot (this is not in the report). 
+pdf("HLMrocSatellite.pdf",7,5)
+ggplot()+geom_path(aes(x=1-rocHLMRS$specificities, y=rocHLMRS$sensitivities, colour="Red soil"), size=0.8)+
+  geom_path(aes(x=1-rocHLMCC$specificities, y=rocHLMCC$sensitivities, colour="Cotten corp"), size=0.8) + 
+  geom_path(aes(x=1-rocHLMGS$specificities, y=rocHLMGS$sensitivities, colour="Grey soil"), size=0.8) + 
+  geom_path(aes(x=1-rocHLMDGS$specificities, y=rocHLMDGS$sensitivities, colour="Damp grey soil"), size=0.8) +
+  geom_path(aes(x=1-rocHLMVS$specificities, y=rocHLMVS$sensitivities, colour="Vegetation stubble"), size=0.8) +
+  geom_path(aes(x=1-rocHLMVDGS$specificities, y=rocHLMVDGS$sensitivities, colour="Very damp grey soil"), size=0.8) +
+  scale_colour_manual(name = "Model", values = cols) + xlab("1 - Specificity") + ylab("Sensitivity") +
+  theme(plot.background = element_rect(fill="transparent", color=NA), legend.background=element_rect(fill="transparent"))
+dev.off()
+
+# ROC curve for the HLM applyed on the Breastcancer data.
 postControlBC <- as.numeric(lapply(postTestBC,"[[",2))
 rocBC <- roc(testBC[,1001], postControlBC, levels=c("control", "case"))
 rocBC$auc
