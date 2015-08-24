@@ -37,8 +37,7 @@ updT <- function(x,a,m){# Vertex a has gathered or lost a connection.
     m$eli[a,] <- m$eli[,a] <-FALSE
     m$eli[a,x$t>m$crit] <- m$eli[x$t>m$crit,a] <- TRUE
   } else {
-    out <<- (1:m$p)[x$out]
-    w <- x$w
+    out <- (1:m$p)[x$out]
     h <- R[out,x$nei]%*%x$w
     be <- x$w%*%R[x$nei,a]
     ssa <- 1-t.default(be)%*%R[x$nei,x$nei]%*%be

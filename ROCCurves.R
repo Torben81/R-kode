@@ -83,6 +83,7 @@ ggplot()+geom_path(aes(x=1-rocHLMRS$specificities, y=rocHLMRS$sensitivities, col
   geom_path(aes(x=1-rocHLMVS$specificities, y=rocHLMVS$sensitivities, colour="Vegetation stubble"), size=0.8) +
   geom_path(aes(x=1-rocHLMVDGS$specificities, y=rocHLMVDGS$sensitivities, colour="Very damp grey soil"), size=0.8) +
   scale_colour_manual(name = "Model", values = cols) + xlab("1 - Specificity") + ylab("Sensitivity") +
+  ggtitle("ROC curves for HLM applied on Satellite data")+
   theme(plot.background = element_rect(fill="transparent", color=NA), legend.background=element_rect(fill="transparent"))
 dev.off()
 
